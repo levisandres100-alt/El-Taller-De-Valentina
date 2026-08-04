@@ -197,6 +197,50 @@
             document.getElementById("modalLightbox").style.display = "none";
         }
     </script>
+    <script>
+    // Configuración de tu cliente de Supabase
+    const SUPABASE_URL = 'https://uaupqoejzjrmoxnnpvhw.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_d8KZk2obm5GnYQZ_H5XgFA_v9-FrEMf';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Función para traer los productos de la base de datos
+    async function cargarproductos() {
+        const grid = document.getElementById('grid-productos');
+        
+        let { data: productos, error } = await _supabase
+            .from('productos')
+            .select('*');
+
+        if (error) {
+            console.error('Error al cargar productos:', error);
+            return;
+        }
+
+        // Limpiamos el contenedor
+        grid.innerHTML = '';
+
+        // Generamos la tarjeta para cada producto
+        productos.forEach(prod => {
+            const card = document.createElement('div');
+            card.className = 'card-producto';
+            
+            const mensajeWa = encodeURIComponent(`Hola, me interesa el producto: ${prod.nombre}`);
+
+            card.innerHTML = `
+                <img src="${prod.imagen_url}" alt="${prod.nombre}" onclick="abrirImagen(this.src)">
+                <h4>${prod.nombre}</h4>
+                <div class="precio">Q ${prod.precio}</div>
+                <a href="https://wa.me/50242731311?text=${mensajeWa}" target="_blank" class="btn-pedir">
+                    💬 Pedir por WhatsApp
+                </a>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    // Ejecutar la carga al abrir la página
+    cargarproductos();
+</script>
 
 </body>
 </html>

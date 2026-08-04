@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - El Taller de Valentina</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Supabase JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        body {
+            background-color: #fdfbfb;
+            font-family: 'Poppins', sans-serif;
+            margin: 30px auto;
+            max-width: 500px;
+            padding: 25px;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(220, 180, 190, 0.15);
+            border: 1px solid #f2e6e8;
+        }
+
+        h2, h3 {
+            color: #d47a8f;
+            font-family: 'Playfair Display', serif;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .campo {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            color: #8c7b83;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        input[type="email"], input[type="password"], input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #f2e6e8;
+            border-radius: 10px;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        button {
+            width: 100%;
+            background: #d47a8f;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.2s ease;
+        }
+
+        button:hover {
+            background: #c3697e;
+        }
+
+        .btn-cerrar {
+            background: #8c7b83;
+            margin-top: 25px;
+        }
+
+        .btn-cerrar:hover {
+            background: #6e5f66;
+        }
+
+        .oculto {
+            display: none;
+        }
+
+        .mensaje {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .exito { color: #25D366; }
+        .error { color: #e74c3c; }
+
+        /* Estilos para la lista de productos */
+        .item-producto {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding: 10px 15px;
+            border: 1px solid #f2e6e8;
+            border-radius: 12px;
+            background: #faf6f7;
+        }
+
+        .item-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .item-info img {
+            width: 45px;
+            height: 45px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .btn-borrar {
+            background: #e74c3c;
+            width: auto;
+            padding: 6px 12px;
+            margin: 0;
+            font-size: 12px;
+        }
+
+        .btn-borrar:hover {
+            background: #c0392b;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SECCIÓN 1: LOGIN -->
+    <div id="seccion-login">
+        <h2>Acceso Administrativo 🎀</h2>
+        <form id="form-login">
+            <div class="campo">
+                <label>Correo Electrónico</label>
+                <input type="email" id="login-email" placeholder="admin@eltallerdevalentina.com" required>
+            </div>
+            <div class="campo">
+                <label>Contraseña</label>
+                <input type="password" id="login-pass" placeholder="••••••••" required>
+            </div>
+            <button type="submit" id="btn-login">Ingresar al Panel</button>
+        </form>
+        <p id="msg-login" class="mensaje error"></p>
+    </div>
+
+    <!-- SECCIÓN 2: FORMULARIO PUBLICAR PRODUCTO -->
+    <div id="seccion-admin" class="oculto">
+        <h2>Subir Nueva Creación ✨</h2>
+        
+        <form id="form-producto">
+            <div class="campo">
+                <label>Nombre del Producto</label>
+                <input type="text" id="prod-nombre" placeholder="Ej: Moño Escolar Rojo" required>
+            </div>
+
+            <div class="campo">
+                <label>Precio (Q)</label>
+                <input type="text" id="prod-precio" placeholder="Ej: 25.00" required>
+            </div>
+
+            <div class="campo">
+                <label>Foto del Producto</label>
+                <input type="file" id="prod-foto" accept="image/*" required>
+            </div>
+
+            <button type="submit" id="btn-guardar">🚀 Publicar Producto</button>
+        </form>
+
+        <p id="msg-status" class="mensaje"></p>
+
+        <hr style="margin: 30px 0 20px 0; border: 0; border-top: 1px solid #f2e6e8;">
+
+        <!-- SECCIÓN 3: LISTA DE PRODUCTOS PUBLICADOS -->
+        <h3>Inventario Publicado 📋</h3>
+        <div id="lista-productos">Cargando productos...</div>
+
+        <button type="button" class="btn-cerrar" onclick="cerrarSesion()">Cerrar Sesión</button>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://uaupqoejzjrmoxnnpvhw.supabase.co'; // Pegá tu URL
+        const SUPABASE_KEY = 'sb_publishable_d8KZk2obm5GnYQZ_H5XgFA_v9-FrEMf';               // Pegá tu Anon Key
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Verificar Sesión al entrar
+        async function verificarSesion() {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (session) {
+                mostrarPanelAdmin();
+            }
+        }
+        verificarSesion();
+
+        // Login
+        document.getElementById('form-login').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-pass').value;
+            const msg = document.getElementById('msg-login');
+            const btn = document.getElementById('btn-login');
+
+            btn.disabled = true;
+            btn.textContent = "Verificando...";
+            msg.textContent = "";
+
+            const { data, error } = await _supabase.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
+
+            if (error) {
+                msg.textContent = "Error: " + error.message;
+                btn.disabled = false;
+                btn.textContent = "Ingresar al Panel";
+            } else {
+                mostrarPanelAdmin();
+            }
+        });
+
+        function mostrarPanelAdmin() {
+            document.getElementById('seccion-login').classList.add('oculto');
+            document.getElementById('seccion-admin').classList.remove('oculto');
+            cargarProductosAdmin(); // Carga la lista al entrar
+        }
+
+        async function cerrarSesion() {
+            await _supabase.auth.signOut();
+            location.reload();
+        }
+
+        // Subir Producto
+        document.getElementById('form-producto').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const nombre = document.getElementById('prod-nombre').value;
+            const precio = document.getElementById('prod-precio').value;
+            const fileInput = document.getElementById('prod-foto');
+            const file = fileInput.files[0];
+            const msgStatus = document.getElementById('msg-status');
+            const btn = document.getElementById('btn-guardar');
+
+            if (!file) return;
+
+            btn.disabled = true;
+            btn.textContent = "Subiendo imagen...";
+            msgStatus.textContent = "";
+
+            try {
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${Date.now()}.${fileExt}`;
+                
+                const { data: uploadData, error: uploadError } = await _supabase.storage
+                    .from('imagenes')
+                    .upload(fileName, file);
+
+                if (uploadError) throw uploadError;
+
+                const { data: urlData } = _supabase.storage
+                    .from('imagenes')
+                    .getPublicUrl(fileName);
+
+                const publicUrl = urlData.publicUrl;
+
+                const { error: insertError } = await _supabase
+                    .from('productos')
+                    .insert([{ nombre: nombre, precio: precio, imagen_url: publicUrl }]);
+
+                if (insertError) throw insertError;
+
+                msgStatus.className = "mensaje exito";
+                msgStatus.textContent = "¡Producto publicado con éxito! 🎀";
+                document.getElementById('form-producto').reset();
+                cargarProductosAdmin(); // Actualiza la lista sin refrescar la página
+
+            } catch (err) {
+                console.error(err);
+                msgStatus.className = "mensaje error";
+                msgStatus.textContent = "Error al guardar: " + (err.message || "Revisa la consola");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "🚀 Publicar Producto";
+            }
+        });
+
+        // Cargar Lista de Productos con Botón de Eliminar
+        async function cargarProductosAdmin() {
+            const contenedor = document.getElementById('lista-productos');
+            const { data: productos, error } = await _supabase
+                .from('productos')
+                .select('*')
+                .order('id', { ascending: false });
+
+            if (error) {
+                contenedor.innerHTML = "<p class='mensaje error'>Error al cargar inventario</p>";
+                return;
+            }
+
+            if (productos.length === 0) {
+                contenedor.innerHTML = "<p style='text-align:center; font-size:13px; color:#8c7b83;'>No hay productos publicados.</p>";
+                return;
+            }
+
+            let html = '';
+            productos.forEach(prod => {
+                html += `
+                    <div class="item-producto">
+                        <div class="item-info">
+                            <img src="${prod.imagen_url}" alt="foto">
+                            <div>
+                                <strong style="font-size:13px; color:#333;">${prod.nombre}</strong><br>
+                                <span style="font-size:12px; color:#d47a8f; font-weight:600;">Q${prod.precio}</span>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-borrar" onclick="eliminarProducto(${prod.id})">Eliminar</button>
+                    </div>
+                `;
+            });
+            contenedor.innerHTML = html;
+        }
+
+        // Eliminar Producto de Supabase
+        async function eliminarProducto(id) {
+            if (confirm("¿Estás seguro de que querés borrar este producto?")) {
+                const { error } = await _supabase
+                    .from('productos')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) {
+                    alert("Error al eliminar: " + error.message);
+                } else {
+                    cargarProductosAdmin(); // Vuelve a listar automáticamente
+                }
+            }
+        }
+    </script>
+</body>
+</html>
