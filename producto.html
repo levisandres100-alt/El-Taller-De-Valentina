@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo de Creaciones - El Taller de Valentina</title>
+    
+    <!-- Fuentes de Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Supabase CDN (para cuando conectemos la base de datos) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        body {
+            background-color: #fdfbfb;
+            font-family: 'Poppins', sans-serif;
+            margin: 20px auto;
+            max-width: 800px;
+            padding: 20px;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(220, 180, 190, 0.15);
+            border: 1px solid #f2e6e8;
+        }
+
+        .header-catalogo {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            color: #d47a8f;
+            font-family: 'Playfair Display', serif;
+            font-size: 30px;
+            margin-bottom: 5px;
+        }
+
+        p.subtitulo {
+            color: #8c7b83;
+            font-size: 14px;
+            margin-top: 0;
+        }
+
+        .btn-volver {
+            display: inline-block;
+            background: #f2e6e8;
+            color: #d47a8f;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-volver:hover {
+            background: #d47a8f;
+            color: white;
+        }
+
+        /* Grid / Cuadrícula de Productos */
+        .catalogo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .card-producto {
+            background: #ffffff;
+            border: 1px solid #f2e6e8;
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            transition: transform 0.2s ease;
+        }
+
+        .card-producto:hover {
+            transform: translateY(-4px);
+        }
+
+        .card-producto img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 10px;
+            cursor: pointer; /* Indica que se puede hacer clic para agrandar */
+            transition: opacity 0.2s ease;
+        }
+
+        .card-producto img:hover {
+            opacity: 0.9;
+        }
+
+        .card-producto h4 {
+            color: #4a3e43;
+            margin: 12px 0 5px 0;
+            font-size: 16px;
+        }
+
+        .card-producto .precio {
+            color: #d47a8f;
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .btn-pedir {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #25D366, #128C7E);
+            color: white;
+            text-decoration: none;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* Modal Lightbox (Para ver la imagen en grande) */
+        .modal-lightbox {
+            display: none; /* Oculto por defecto */
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-contenido {
+            max-width: 90%;
+            max-height: 80%;
+            border-radius: 10px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.5);
+        }
+
+        .cerrar-modal {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 35px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="btn-volver">← Volver al Inicio</a>
+
+    <div class="header-catalogo">
+        <h1>Nuestras Creaciones 🎀</h1>
+        <p class="subtitulo">Toca cualquier imagen para verla en tamaño completo</p>
+    </div>
+
+    <!-- Contenedor donde Supabase va a cargar todos los productos -->
+    <div class="catalogo-grid" id="grid-productos">
+        <!-- Ejemplo de cómo se va a ver un producto (luego lo haremos dinámico con JS) -->
+        <div class="card-producto">
+            <img src="logo.jpg" alt="Moño de prueba" onclick="abrirImagen(this.src)">
+            <h4>Moño Clásico Escolar</h4>
+            <div class="precio">Q 25.00</div>
+            <a href="https://wa.me/50242731311?text=Hola,%20me%20interesa%20el%20Moño%20Clásico%20Escolar" target="_blank" class="btn-pedir">
+                💬 Pedir por WhatsApp
+            </a>
+        </div>
+    </div>
+
+    <!-- Estrcutura del Lightbox (Visor de fotos grande) -->
+    <div id="modalLightbox" class="modal-lightbox" onclick="cerrarImagen()">
+        <span class="cerrar-modal">&times;</span>
+        <img class="modal-contenido" id="imagenGrande">
+    </div>
+
+    <script>
+        // Funciones para abrir y cerrar la foto en grande
+        function abrirImagen(src) {
+            document.getElementById("imagenGrande").src = src;
+            document.getElementById("modalLightbox").style.display = "flex";
+        }
+
+        function cerrarImagen() {
+            document.getElementById("modalLightbox").style.display = "none";
+        }
+    </script>
+
+</body>
+</html>
